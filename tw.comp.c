@@ -165,7 +165,25 @@ static Char **
 tw_find(Char *nam, struct varent *vp, int cmd)
 {
     Char **rv;
-
+    struct varent *vp_orig = vp;
+    
+    /* We run through vp twice, one using exact string comparison and second
+     * using glob matching. This is because we want to give rules for exact
+     * command name a higher precedence then rules for glob-pattern.
+     */
+    for (vp = vp->v_left; vp; vp = vp->v_right) {
+	if (cmd) {
+	    if (vp->v_name[0] != '-')
+		continue;
+	    if (Strcmp(nam, &vp->v_name[1]) == 0 && vp->vec != NULL)
+		return vp->vec;
+	}
+	else
+	    if (Strcmp(nam, vp->v_name) == 0 && vp->vec != NULL)
+		return vp->vec;
+    }
+    
+    vp = vp_orig;
     for (vp = vp->v_left; vp; vp = vp->v_right) {
 	if (vp->v_left && (rv = tw_find(nam, vp, cmd)) != NULL)
 	    return rv;
